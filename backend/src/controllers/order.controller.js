@@ -1,3 +1,5 @@
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
 import { createRazorpayOrder, verifyRazorpayPayment } from '../services/payment.service.js';
 import { sendOrderConfirmationEmail } from '../services/email.service.js';
@@ -12,9 +14,96 @@ export const createOrder = async (req, res) => {
       platform = 'RETAIL',
       policyAccepted,
       policyVersion = '1.0',
+      accountPassword,
     } = req.body;
 
-    const userId = req.user ? req.user.id : null;
+    let userId = req.user ? req.user.id : null;
+    let newAuthToken = null;
+    let authUserObj = null;
+
+    if (!userId && req.headers.authorization) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        if (token) {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecret_piercing_ecom_jwt_key_2026');
+          if (decoded && decoded.userId) {
+            userId = decoded.userId;
+          }
+        }
+      } catch (e) {
+        // ignore token error
+      }
+    }
+
+    // Auto-Account Registration / Sign-In handling if not logged in
+    if (!userId) {
+      const email = shippingAddress?.email;
+      if (!email) {
+        return res.status(400).json({ success: false, message: 'Valid email address is required to place an order.' });
+      }
+
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser) {
+        if (accountPassword) {
+          const isMatch = await bcrypt.compare(accountPassword, existingUser.passwordHash);
+          if (!isMatch) {
+            return res.status(400).json({
+              success: false,
+              message: 'An account with this email already exists. Please enter your correct account password to proceed.',
+            });
+          }
+          userId = existingUser.id;
+          newAuthToken = jwt.sign(
+            { userId: existingUser.id, role: existingUser.role },
+            process.env.JWT_SECRET || 'supersecret_piercing_ecom_jwt_key_2026',
+            { expiresIn: '7d' }
+          );
+          authUserObj = {
+            id: existingUser.id,
+            name: existingUser.name,
+            email: existingUser.email,
+            role: existingUser.role,
+          };
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: 'An account with this email already exists. Please sign in or enter your account password.',
+          });
+        }
+      } else {
+        if (!accountPassword || accountPassword.length < 4) {
+          return res.status(400).json({
+            success: false,
+            message: 'Please set an account password (at least 4 characters) to create your account and track this order.',
+          });
+        }
+
+        const passwordHash = await bcrypt.hash(accountPassword, 10);
+        const newUser = await prisma.user.create({
+          data: {
+            name: shippingAddress.fullName || 'Retail Customer',
+            email,
+            passwordHash,
+            phone: shippingAddress.phone || '',
+            role: 'RETAIL_CUSTOMER',
+          },
+        });
+
+        userId = newUser.id;
+        newAuthToken = jwt.sign(
+          { userId: newUser.id, role: newUser.role },
+          process.env.JWT_SECRET || 'supersecret_piercing_ecom_jwt_key_2026',
+          { expiresIn: '7d' }
+        );
+        authUserObj = {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+        };
+      }
+    }
+
     const userEmail = req.user ? req.user.email : shippingAddress.email;
 
     // MANDATORY POLICY ACCEPTANCE CHECK
@@ -172,6 +261,8 @@ export const createOrder = async (req, res) => {
         policyAccepted: true,
       },
       razorpayOrder: rzpResult.order,
+      token: newAuthToken,
+      user: authUserObj,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Order creation failed', error: error.message });
@@ -228,8 +319,14 @@ export const verifyPayment = async (req, res) => {
 
 export const getMyOrders = async (req, res) => {
   try {
+    const userEmail = req.user.email;
     const orders = await prisma.order.findMany({
-      where: { userId: req.user.id },
+      where: {
+        OR: [
+          { userId: req.user.id },
+          { shippingAddressJson: { contains: userEmail } },
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         items: true,
@@ -292,5 +389,56 @@ export const cancelOrder = async (req, res) => {
     return res.json({ success: true, message: 'Order cancelled successfully', order: updatedOrder });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Error cancelling order', error: error.message });
+  }
+};
+
+export const getAllOrdersAdmin = async (req, res) => {
+  try {
+    const orders = await prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: { images: true },
+            },
+          },
+        },
+        user: {
+          select: { id: true, name: true, email: true, phone: true, role: true, companyName: true, gstNumber: true },
+        },
+        payments: true,
+        supportRequests: true,
+        policyAcceptances: true,
+      },
+    });
+    return res.json({ success: true, orders });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error fetching all admin orders', error: error.message });
+  }
+};
+
+export const updateOrderStatusAdmin = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { orderStatus, shippingStatus, trackingNumber } = req.body;
+
+    const dataToUpdate = {};
+    if (orderStatus) dataToUpdate.orderStatus = orderStatus;
+    if (shippingStatus) dataToUpdate.shippingStatus = shippingStatus;
+    if (trackingNumber !== undefined) dataToUpdate.trackingNumber = trackingNumber;
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: dataToUpdate,
+      include: {
+        items: true,
+        user: { select: { name: true, email: true } },
+      },
+    });
+
+    return res.json({ success: true, message: 'Order status updated successfully', order: updatedOrder });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error updating order status', error: error.message });
   }
 };

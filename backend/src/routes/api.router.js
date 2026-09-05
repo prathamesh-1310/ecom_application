@@ -23,6 +23,8 @@ import {
   getMyOrders,
   getOrderById,
   cancelOrder,
+  getAllOrdersAdmin,
+  updateOrderStatusAdmin,
 } from '../controllers/order.controller.js';
 import { getB2BApplications, updateB2BStatus } from '../controllers/b2b.controller.js';
 import {
@@ -72,6 +74,10 @@ router.post('/orders/verify-payment', verifyPayment);
 router.get('/orders/my-orders', authenticateToken, getMyOrders);
 router.get('/orders/:orderId', getOrderById);
 router.post('/orders/:orderId/cancel', authenticateToken, cancelOrder);
+
+// Admin Order Management Routes
+router.get('/admin/orders', authenticateToken, requireRole(['SUPER_ADMIN', 'STAFF_ADMIN']), getAllOrdersAdmin);
+router.put('/admin/orders/:orderId/status', authenticateToken, requireRole(['SUPER_ADMIN', 'STAFF_ADMIN']), updateOrderStatusAdmin);
 
 // B2B Wholesale Management Routes
 router.get('/b2b/applications', authenticateToken, requireRole(['SUPER_ADMIN', 'STAFF_ADMIN']), getB2BApplications);

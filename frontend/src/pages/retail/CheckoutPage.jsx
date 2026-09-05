@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { ShieldCheck, Lock, CheckCircle } from 'lucide-react';
+import { ShieldCheck, Lock, CheckCircle, UserCheck, KeyRound } from 'lucide-react';
 import { PolicyCheckbox } from '../../components/common/PolicyCheckbox';
 import { PolicyBadge } from '../../components/common/PolicyBadge';
 import { useCart } from '../../context/CartContext';
@@ -10,8 +10,9 @@ import { useToast } from '../../context/ToastContext';
 
 export const CheckoutPage = () => {
   const { cart, platform, fetchCart } = useCart();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const [address, setAddress] = useState({
     fullName: user?.name || '',
@@ -25,6 +26,7 @@ export const CheckoutPage = () => {
     postalCode: '400020',
   });
 
+  const [accountPassword, setAccountPassword] = useState('');
   const [policyAccepted, setPolicyAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [orderComplete, setOrderComplete] = useState(null);
@@ -34,10 +36,13 @@ export const CheckoutPage = () => {
   const tax = Math.round(cart.subtotal * 0.03 * 100) / 100;
   const finalTotal = Math.max(0, cart.subtotal + shippingCharge + tax);
 
-  const { showToast } = useToast();
-
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
+
+    if (!user && (!accountPassword || accountPassword.length < 4)) {
+      showToast('Please enter an account password (at least 4 characters) to create your account and track this order.', 'warning', 'Account Password Required');
+      return;
+    }
 
     if (!policyAccepted) {
       showToast('You must actively accept the No Return and No Refund Policy before proceeding with checkout.', 'warning', 'Policy Agreement Required');
@@ -48,19 +53,30 @@ export const CheckoutPage = () => {
       setSubmitting(true);
 
       // 1. Create order on backend
-      const res = await axios.post('/api/orders/checkout', {
-        cartId: cart.id,
-        shippingAddress: address,
-        billingAddress: address,
-        platform,
-        policyAccepted: true,
-        policyVersion: '1.0',
-      });
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        '/api/orders/checkout',
+        {
+          cartId: cart.id,
+          shippingAddress: address,
+          billingAddress: address,
+          platform,
+          policyAccepted: true,
+          policyVersion: '1.0',
+          accountPassword: user ? undefined : accountPassword,
+        },
+        token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+      );
 
       if (!res.data.success) {
         showToast(res.data.message || 'Checkout failed', 'error');
         setSubmitting(false);
         return;
+      }
+
+      // If backend created/authenticated user account inline, log them in immediately
+      if (res.data.token && res.data.user) {
+        login(res.data.token, res.data.user);
       }
 
       const { order, razorpayOrder } = res.data;
@@ -97,7 +113,7 @@ export const CheckoutPage = () => {
           Thank you for your order, <strong>{orderComplete.orderNumber}</strong>.
         </p>
 
-        <div className="bg-onyx-900 text-beige-50 p-6 rounded-lg border border-gold-500/30 max-w-md mx-auto text-left text-xs space-y-2">
+        <div className="bg-onyx-900 text-beige-50 p-6 rounded-lg border border-gold-500/30 max-w-md mx-auto text-left text-xs space-y-2 shadow-xl">
           <h4 className="font-serif font-semibold text-gold-500 text-sm uppercase">Order Details</h4>
           <p><strong>Order ID:</strong> {orderComplete.orderNumber}</p>
           <p><strong>Total Paid:</strong> ₹{orderComplete.totalAmount.toFixed(2)}</p>
@@ -109,7 +125,7 @@ export const CheckoutPage = () => {
 
         <button
           onClick={() => navigate('/account')}
-          className="bg-onyx-900 text-gold-500 font-semibold px-6 py-3 rounded text-xs uppercase tracking-wider hover:bg-gold-500 hover:text-onyx-900 transition-colors"
+          className="bg-onyx-900 text-gold-500 font-semibold px-6 py-3 rounded text-xs uppercase tracking-wider hover:bg-gold-500 hover:text-onyx-900 transition-colors shadow-lg"
         >
           View Order Status in My Account
         </button>
@@ -119,17 +135,33 @@ export const CheckoutPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="border-b border-gold-500/20 pb-4">
-        <h1 className="text-3xl font-serif font-bold text-onyx-900">Secure Checkout</h1>
-        <p className="text-xs text-gray-500 mt-1">Complete your delivery address and policy acknowledgment to place order.</p>
+      <div className="border-b border-gold-500/20 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-serif font-bold text-onyx-900">Secure Checkout</h1>
+          <p className="text-xs text-gray-500 mt-1">Complete your delivery address, account details, and policy acknowledgment.</p>
+        </div>
+
+        {user ? (
+          <div className="bg-onyx-900 text-gold-500 px-4 py-2 rounded text-xs border border-gold-500/30 flex items-center gap-2">
+            <UserCheck className="w-4 h-4 text-gold-500" />
+            <span>Signed in as <strong>{user.name}</strong> ({user.email})</span>
+          </div>
+        ) : (
+          <Link
+            to="/login?redirect=/checkout"
+            className="bg-gold-500/10 text-gold-600 border border-gold-500/40 hover:bg-gold-500 hover:text-onyx-950 px-4 py-2 rounded text-xs font-semibold transition-colors"
+          >
+            Already have an account? Sign In →
+          </Link>
+        )}
       </div>
 
       <form onSubmit={handleCheckoutSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Shipping Address Inputs */}
+        {/* Shipping & Account Details */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white border border-beige-200 p-6 rounded-lg shadow-sm space-y-4">
             <h3 className="font-serif font-bold text-base text-onyx-900 border-b border-gray-100 pb-3 uppercase tracking-wider">
-              1. Shipping Address
+              1. Shipping & Account Credentials
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -145,6 +177,21 @@ export const CheckoutPage = () => {
               </div>
 
               <div>
+                <label className="block font-semibold text-gray-700 mb-1">Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  disabled={!!user}
+                  value={address.email}
+                  onChange={(e) => setAddress({ ...address, email: e.target.value })}
+                  placeholder="elena@example.com"
+                  className={`w-full border rounded px-3 py-2 focus:outline-none focus:border-gold-500 ${
+                    user ? 'bg-gray-100 text-gray-500 border-gray-300' : 'bg-beige-50 border-gray-300'
+                  }`}
+                />
+              </div>
+
+              <div>
                 <label className="block font-semibold text-gray-700 mb-1">Phone Number *</label>
                 <input
                   type="tel"
@@ -154,6 +201,25 @@ export const CheckoutPage = () => {
                   className="w-full bg-beige-50 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-gold-500"
                 />
               </div>
+
+              {/* Password field for guests */}
+              {!user && (
+                <div>
+                  <label className="block font-semibold text-gold-600 mb-1 flex items-center gap-1">
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>Account Password (To track order) *</span>
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={4}
+                    value={accountPassword}
+                    onChange={(e) => setAccountPassword(e.target.value)}
+                    placeholder="Set password (min 4 chars)..."
+                    className="w-full bg-beige-50 border border-gold-500/40 rounded px-3 py-2 focus:outline-none focus:border-gold-500 font-mono"
+                  />
+                </div>
+              )}
 
               <div className="sm:col-span-2">
                 <label className="block font-semibold text-gray-700 mb-1">Address Line 1 *</label>

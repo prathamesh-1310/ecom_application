@@ -34,6 +34,8 @@ export const AdminDashboard = () => {
   const [b2bApplications, setB2bApplications] = useState([]);
   const [orders, setOrders] = useState([]);
   const [supportRequests, setSupportRequests] = useState([]);
+  const [orderFilterPlatform, setOrderFilterPlatform] = useState('ALL');
+  const [orderSearch, setOrderSearch] = useState('');
 
   // Modals & Forms
   const [showCatModal, setShowCatModal] = useState(false);
@@ -110,10 +112,31 @@ export const AdminDashboard = () => {
 
   const loadOrders = async () => {
     try {
-      const res = await axios.get('/api/orders/my-orders');
+      setLoading(true);
+      const res = await axios.get('/api/admin/orders');
       if (res.data.success) setOrders(res.data.orders);
     } catch (err) {
-      console.error(err);
+      console.error('Error loading admin orders:', err);
+      showToast('Failed to fetch admin orders', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId, orderStatus, shippingStatus, trackingNumber) => {
+    try {
+      const res = await axios.put(`/api/admin/orders/${orderId}/status`, {
+        orderStatus,
+        shippingStatus,
+        trackingNumber,
+      });
+      if (res.data.success) {
+        showToast(`Order status updated to: ${res.data.order.orderStatus}`, 'success');
+        loadOrders();
+        fetchAdminStats();
+      }
+    } catch (err) {
+      showToast('Failed to update order status', 'error');
     }
   };
 
@@ -623,26 +646,199 @@ export const AdminDashboard = () => {
         {/* TAB 5: ORDER MANAGEMENT */}
         {activeTab === 'orders' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-serif font-bold text-onyx-900">Order Management & Tracking</h2>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-4">
+              <div>
+                <h2 className="text-2xl font-serif font-bold text-onyx-900">Order Management & Tracking</h2>
+                <p className="text-xs text-gray-500">Monitor retail & B2B orders, verify policy acceptance, and manage shipment tracking.</p>
+              </div>
 
-            <div className="space-y-4">
-              {orders.map((ord) => (
-                <div key={ord.id} className="bg-white border border-beige-200 p-5 rounded-lg shadow-sm space-y-3 text-xs">
-                  <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                    <div>
-                      <span className="font-serif font-bold text-sm text-onyx-900 font-mono">{ord.orderNumber}</span>
-                      <span className="text-gray-400 ml-3">Platform: {ord.platform}</span>
-                    </div>
-                    <span className="bg-onyx-900 text-gold-500 px-2.5 py-0.5 rounded font-semibold">Status: {ord.orderStatus}</span>
-                  </div>
+              {/* Search & Platform Filter */}
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  type="text"
+                  placeholder="Search order #, customer email..."
+                  value={orderSearch}
+                  onChange={(e) => setOrderSearch(e.target.value)}
+                  className="bg-white border border-gray-300 rounded px-3 py-1.5 text-xs w-64 focus:outline-none focus:border-gold-500"
+                />
 
-                  <div className="flex justify-between text-gray-600">
-                    <span>Payable Total: <strong>₹{ord.totalAmount.toFixed(2)}</strong></span>
-                    <span>Policy Accepted v{ord.policyVersion} at {new Date(ord.policyAcceptedAt).toLocaleString()}</span>
-                  </div>
+                <div className="flex bg-beige-200 p-0.5 rounded text-xs">
+                  {['ALL', 'RETAIL', 'B2B'].map((plat) => (
+                    <button
+                      key={plat}
+                      onClick={() => setOrderFilterPlatform(plat)}
+                      className={`px-3 py-1 rounded font-semibold transition-all ${
+                        orderFilterPlatform === plat ? 'bg-onyx-900 text-gold-500' : 'text-gray-700 hover:text-onyx-900'
+                      }`}
+                    >
+                      {plat}
+                    </button>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
+
+            {loading ? (
+              <div className="text-xs text-gray-500 py-10 text-center">Loading platform orders...</div>
+            ) : (() => {
+              const filteredOrders = orders.filter((ord) => {
+                const matchesPlat = orderFilterPlatform === 'ALL' || ord.platform === orderFilterPlatform;
+                const searchLower = orderSearch.toLowerCase();
+                const matchesSearch =
+                  !orderSearch ||
+                  ord.orderNumber.toLowerCase().includes(searchLower) ||
+                  (ord.user?.email && ord.user.email.toLowerCase().includes(searchLower)) ||
+                  (ord.shippingAddressJson && ord.shippingAddressJson.toLowerCase().includes(searchLower));
+                return matchesPlat && matchesSearch;
+              });
+
+              if (filteredOrders.length === 0) {
+                return (
+                  <div className="bg-white p-12 rounded-lg border border-beige-200 text-center space-y-3">
+                    <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto" />
+                    <p className="text-sm font-semibold text-gray-700">No Orders Found</p>
+                    <p className="text-xs text-gray-400">No orders match your current filter and search criteria.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-6">
+                  {filteredOrders.map((ord) => {
+                    let addressObj = {};
+                    try {
+                      addressObj = JSON.parse(ord.shippingAddressJson || '{}');
+                    } catch (e) {}
+
+                    return (
+                      <div key={ord.id} className="bg-white border border-beige-200 rounded-lg p-6 shadow-sm space-y-4">
+                        {/* Header Row */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className="font-serif font-bold text-base text-onyx-900 font-mono">{ord.orderNumber}</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              ord.platform === 'B2B' ? 'bg-gold-500/20 text-gold-700 border border-gold-500/40' : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {ord.platform}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              Placed on {new Date(ord.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className={`px-2.5 py-0.5 rounded font-semibold ${
+                              ord.paymentStatus === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              Payment: {ord.paymentStatus}
+                            </span>
+                            <span className="bg-onyx-900 text-gold-500 px-2.5 py-0.5 rounded font-semibold">
+                              Status: {ord.orderStatus}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Customer & Address Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs bg-beige-50/60 p-3.5 rounded border border-beige-200/80">
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-gold-600 block mb-1">Customer Info</span>
+                            <p className="font-semibold text-onyx-900">{ord.user?.name || addressObj.fullName || 'Guest Customer'}</p>
+                            <p className="text-gray-600">{ord.user?.email || addressObj.email || 'No Email'}</p>
+                            <p className="text-gray-600">Phone: {ord.user?.phone || addressObj.phone || 'N/A'}</p>
+                            {ord.user?.companyName && (
+                              <p className="text-gold-700 font-medium">B2B Company: {ord.user.companyName} (GST: {ord.user.gstNumber || 'N/A'})</p>
+                            )}
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-gold-600 block mb-1">Shipping Destination</span>
+                            <p className="text-gray-700">{addressObj.addressLine1} {addressObj.addressLine2 || ''}</p>
+                            <p className="text-gray-700">{addressObj.city}, {addressObj.state} - {addressObj.postalCode}</p>
+                            <p className="text-gray-500 font-mono text-[11px]">Tracking #: {ord.trackingNumber || 'Not assigned'}</p>
+                          </div>
+                        </div>
+
+                        {/* Order Items List */}
+                        <div className="space-y-2 text-xs">
+                          <span className="text-[10px] uppercase font-bold text-gray-400 block">Ordered Products</span>
+                          <div className="divide-y divide-gray-100 border border-gray-100 rounded bg-white">
+                            {ord.items && ord.items.map((item) => (
+                              <div key={item.id} className="p-2.5 flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                  {item.product?.images?.[0]?.imageUrl && (
+                                    <img
+                                      src={item.product.images[0].imageUrl}
+                                      alt={item.productName}
+                                      className="w-9 h-9 object-cover rounded border border-gray-200"
+                                    />
+                                  )}
+                                  <div>
+                                    <p className="font-semibold text-onyx-900">{item.productName}</p>
+                                    <p className="text-[11px] font-mono text-gray-400">SKU: {item.sku}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-gray-600">Qty: {item.quantity} x ₹{item.unitPrice.toFixed(2)}</p>
+                                  <p className="font-bold text-onyx-900">₹{item.totalPrice.toFixed(2)}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Audit & Total Summary */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs bg-onyx-900 text-beige-50 p-3.5 rounded border border-gold-500/30">
+                          <div className="flex items-center gap-2">
+                            <ShieldAlert className="w-4 h-4 text-gold-500 shrink-0" />
+                            <span>No Return Policy Accepted (v{ord.policyVersion}) • Accepted IP: {ord.policyAcceptedIp || '127.0.0.1'}</span>
+                          </div>
+                          <div className="font-serif font-bold text-sm text-gold-500">
+                            Total Payable: ₹{ord.totalAmount.toFixed(2)}
+                          </div>
+                        </div>
+
+                        {/* Order Management Controls */}
+                        <div className="pt-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <label className="font-semibold text-gray-700">Update Order Status:</label>
+                            <select
+                              value={ord.orderStatus}
+                              onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value, ord.shippingStatus, ord.trackingNumber)}
+                              className="bg-beige-50 border border-gray-300 rounded px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-gold-500"
+                            >
+                              <option value="Pending">Pending</option>
+                              <option value="Confirmed">Confirmed</option>
+                              <option value="Processing">Processing</option>
+                              <option value="Packed">Packed</option>
+                              <option value="Shipped">Shipped</option>
+                              <option value="In Transit">In Transit</option>
+                              <option value="Delivered">Delivered</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
+                          </div>
+
+                          {/* Tracking Number Input */}
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              placeholder="Assign Tracking #"
+                              defaultValue={ord.trackingNumber || ''}
+                              onBlur={(e) => {
+                                if (e.target.value !== (ord.trackingNumber || '')) {
+                                  handleUpdateOrderStatus(ord.id, ord.orderStatus, ord.shippingStatus, e.target.value);
+                                }
+                              }}
+                              className="bg-beige-50 border border-gray-300 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-gold-500 font-mono w-44"
+                            />
+                            <span className="text-[10px] text-gray-400 italic">(Auto-saves on blur)</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         )}
 

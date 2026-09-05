@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, ShoppingBag, ArrowRight, Tag } from 'lucide-react';
 import { PolicyBadge } from '../../components/common/PolicyBadge';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
 export const CartPage = () => {
   const { cart, updateQuantity, removeItem, platform } = useCart();
+  const { user } = useAuth();
   const { showToast } = useToast();
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -161,7 +163,14 @@ export const CartPage = () => {
             </form>
 
             <button
-              onClick={() => navigate('/checkout')}
+              onClick={() => {
+                if (!user) {
+                  showToast('Please sign in or create an account to proceed with checkout and track your order.', 'info', 'Account Required');
+                  navigate('/login?redirect=/checkout');
+                } else {
+                  navigate('/checkout');
+                }
+              }}
               className="w-full bg-onyx-900 text-gold-500 hover:bg-gold-500 hover:text-onyx-900 text-xs font-bold uppercase tracking-widest py-3.5 rounded transition-all shadow flex items-center justify-center gap-2"
             >
               <span>Proceed to Checkout</span>
