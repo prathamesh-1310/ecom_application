@@ -2,11 +2,12 @@ import prisma from '../config/prisma.js';
 
 export const getProducts = async (req, res) => {
   try {
-    const { platform = 'RETAIL', categorySlug, subcategorySlug, search, minPrice, maxPrice, sort } = req.query;
+    const { platform = 'RETAIL', categorySlug, subcategorySlug, search, minPrice, maxPrice, sort, includeInactive } = req.query;
 
-    const where = {
-      status: 'ACTIVE',
-    };
+    const where = {};
+    if (includeInactive !== 'true') {
+      where.status = 'ACTIVE';
+    }
 
     if (platform === 'RETAIL') {
       where.visibility = { in: ['RETAIL', 'BOTH'] };
@@ -167,14 +168,64 @@ export const createProduct = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = { ...req.body };
-    delete updateData.images;
-    delete updateData.variants;
-    delete updateData.pricingRules;
+    const {
+      categoryId,
+      subcategoryId,
+      name,
+      slug,
+      sku,
+      description,
+      retailPrice,
+      salePrice,
+      b2bPrice,
+      stock,
+      moq,
+      visibility,
+      status,
+      careInstructions,
+      hygieneNotice,
+      imageUrl,
+    } = req.body;
+
+    const data = {};
+    if (categoryId) data.categoryId = categoryId;
+    if (subcategoryId !== undefined) data.subcategoryId = subcategoryId || null;
+    if (name) data.name = name;
+    if (slug) data.slug = slug;
+    if (sku) data.sku = sku;
+    if (description !== undefined) data.description = description;
+    if (retailPrice !== undefined) data.retailPrice = Number(retailPrice);
+    if (salePrice !== undefined) data.salePrice = salePrice ? Number(salePrice) : null;
+    if (b2bPrice !== undefined) data.b2bPrice = b2bPrice ? Number(b2bPrice) : null;
+    if (stock !== undefined) data.stock = Number(stock);
+    if (moq !== undefined) data.moq = Number(moq);
+    if (visibility) data.visibility = visibility;
+    if (status) data.status = status;
+    if (careInstructions !== undefined) data.careInstructions = careInstructions;
+    if (hygieneNotice !== undefined) data.hygieneNotice = hygieneNotice;
+
+    if (imageUrl) {
+      const existingImg = await prisma.productImage.findFirst({ where: { productId: id } });
+      if (existingImg) {
+        await prisma.productImage.update({
+          where: { id: existingImg.id },
+          data: { imageUrl },
+        });
+      } else {
+        await prisma.productImage.create({
+          data: { productId: id, imageUrl, displayOrder: 0 },
+        });
+      }
+    }
 
     const product = await prisma.product.update({
       where: { id },
-      data: updateData,
+      data,
+      include: {
+        category: true,
+        subcategory: true,
+        images: true,
+      },
     });
 
     return res.json({ success: true, product });

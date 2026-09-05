@@ -8,7 +8,15 @@ import {
   addAddress,
   deleteAddress,
 } from '../controllers/auth.controller.js';
-import { getCategories, createCategory, createSubcategory } from '../controllers/category.controller.js';
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  createSubcategory,
+  updateSubcategory,
+  deleteSubcategory,
+} from '../controllers/category.controller.js';
 import {
   getProducts,
   getProductBySlug,
@@ -53,7 +61,12 @@ router.delete('/addresses/:addressId', authenticateToken, deleteAddress);
 // Category Routes
 router.get('/categories', getCategories);
 router.post('/categories', authenticateToken, requireRole(['SUPER_ADMIN', 'STAFF_ADMIN']), createCategory);
+router.put('/categories/:id', authenticateToken, requireRole(['SUPER_ADMIN', 'STAFF_ADMIN']), updateCategory);
+router.delete('/categories/:id', authenticateToken, requireRole(['SUPER_ADMIN', 'STAFF_ADMIN']), deleteCategory);
+
 router.post('/subcategories', authenticateToken, requireRole(['SUPER_ADMIN', 'STAFF_ADMIN']), createSubcategory);
+router.put('/subcategories/:id', authenticateToken, requireRole(['SUPER_ADMIN', 'STAFF_ADMIN']), updateSubcategory);
+router.delete('/subcategories/:id', authenticateToken, requireRole(['SUPER_ADMIN', 'STAFF_ADMIN']), deleteSubcategory);
 
 // Product Routes
 router.get('/products', getProducts);
