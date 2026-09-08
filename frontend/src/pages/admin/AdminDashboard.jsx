@@ -25,6 +25,10 @@ import {
   Trash2,
   FileSpreadsheet,
   Download,
+  User,
+  ChevronDown,
+  ExternalLink,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -35,6 +39,10 @@ export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview'); // overview, categories, products, b2b_apps, orders, support, banners
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Top Header User Profile Dropdown & Modal States
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Data States
   const [categories, setCategories] = useState([]);
@@ -575,25 +583,27 @@ export const AdminDashboard = () => {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] bg-beige-50">
-      {/* SIDEBAR NAVIGATION */}
-      <aside className="w-64 bg-onyx-950 text-beige-50 border-r border-gold-500/20 p-4 flex flex-col justify-between shrink-0">
+    <div className="flex min-h-screen bg-beige-50">
+      {/* CONSTANT FIXED SIDEBAR */}
+      <aside className="w-64 h-screen sticky top-0 bg-onyx-950 text-beige-50 border-r border-gold-500/20 p-4 flex flex-col justify-between shrink-0 z-40 overflow-y-auto">
         <div className="space-y-6">
           {/* Admin Header */}
           <div className="border-b border-gold-500/20 pb-4">
-            <span className="font-serif text-lg font-bold text-gold-500 uppercase tracking-wider block">
+            <span className="font-serif text-xl font-bold text-gold-500 uppercase tracking-wider block">
               AURELIA ADMIN
             </span>
-            <span className="text-[10px] text-gray-400 uppercase tracking-widest">Unified Control Panel</span>
+            <span className="text-[9px] text-gray-400 uppercase tracking-[0.2em] font-mono">
+              UNIFIED CONTROL PANEL
+            </span>
           </div>
 
           {/* Navigation Links */}
           <nav className="space-y-1.5 text-xs">
             <button
               onClick={() => handleTabSwitch('overview')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded font-medium transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition-all ${
                 activeTab === 'overview'
-                  ? 'bg-gold-500 text-onyx-950 font-bold shadow'
+                  ? 'bg-gold-500 text-onyx-950 font-bold shadow-md'
                   : 'text-gray-300 hover:bg-onyx-800 hover:text-white'
               }`}
             >
@@ -603,9 +613,9 @@ export const AdminDashboard = () => {
 
             <button
               onClick={() => handleTabSwitch('categories')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded font-medium transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition-all ${
                 activeTab === 'categories'
-                  ? 'bg-gold-500 text-onyx-950 font-bold shadow'
+                  ? 'bg-gold-500 text-onyx-950 font-bold shadow-md'
                   : 'text-gray-300 hover:bg-onyx-800 hover:text-white'
               }`}
             >
@@ -615,9 +625,9 @@ export const AdminDashboard = () => {
 
             <button
               onClick={() => handleTabSwitch('products')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded font-medium transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition-all ${
                 activeTab === 'products'
-                  ? 'bg-gold-500 text-onyx-950 font-bold shadow'
+                  ? 'bg-gold-500 text-onyx-950 font-bold shadow-md'
                   : 'text-gray-300 hover:bg-onyx-800 hover:text-white'
               }`}
             >
@@ -627,9 +637,9 @@ export const AdminDashboard = () => {
 
             <button
               onClick={() => handleTabSwitch('b2b_apps')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded font-medium transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition-all ${
                 activeTab === 'b2b_apps'
-                  ? 'bg-gold-500 text-onyx-950 font-bold shadow'
+                  ? 'bg-gold-500 text-onyx-950 font-bold shadow-md'
                   : 'text-gray-300 hover:bg-onyx-800 hover:text-white'
               }`}
             >
@@ -639,9 +649,9 @@ export const AdminDashboard = () => {
 
             <button
               onClick={() => handleTabSwitch('orders')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded font-medium transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition-all ${
                 activeTab === 'orders'
-                  ? 'bg-gold-500 text-onyx-950 font-bold shadow'
+                  ? 'bg-gold-500 text-onyx-950 font-bold shadow-md'
                   : 'text-gray-300 hover:bg-onyx-800 hover:text-white'
               }`}
             >
@@ -651,9 +661,9 @@ export const AdminDashboard = () => {
 
             <button
               onClick={() => handleTabSwitch('support')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded font-medium transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium transition-all ${
                 activeTab === 'support'
-                  ? 'bg-gold-500 text-onyx-950 font-bold shadow'
+                  ? 'bg-gold-500 text-onyx-950 font-bold shadow-md'
                   : 'text-gray-300 hover:bg-onyx-800 hover:text-white'
               }`}
             >
@@ -663,24 +673,128 @@ export const AdminDashboard = () => {
           </nav>
         </div>
 
-        {/* User Info & Logout */}
+        {/* Sidebar Footer Info */}
         <div className="border-t border-gold-500/20 pt-4 space-y-2 text-xs">
-          <div>
-            <p className="font-semibold text-white">{user.name}</p>
-            <p className="text-[10px] text-gold-500 uppercase tracking-widest">{user.role}</p>
+          <div className="bg-onyx-900 border border-gold-500/20 rounded-lg p-3 text-[11px] space-y-1">
+            <div className="flex items-center justify-between text-gray-400 font-mono text-[10px]">
+              <span>SYSTEM STATUS</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            </div>
+            <p className="font-semibold text-white">Aurelia Core v1.0</p>
+            <p className="text-[10px] text-gold-500/80">SQLite / Prisma DB Active</p>
           </div>
-          <button
-            onClick={logout}
-            className="w-full flex items-center gap-2 text-red-400 hover:text-red-300 transition-colors pt-2"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
-          </button>
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 p-8 space-y-8 overflow-y-auto">
+      {/* RIGHT MAIN LAYOUT CONTAINER */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* TOP HEADER BAR */}
+        <header className="h-16 bg-white border-b border-beige-200 px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+          {/* Left: Active Tab Title / Breadcrumbs */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-gray-400 font-semibold uppercase tracking-wider">Control Panel</span>
+            <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+            <span className="text-onyx-900 font-bold uppercase tracking-wider">
+              {activeTab === 'overview' && 'Metrics Overview'}
+              {activeTab === 'categories' && 'Categories & Subcategories'}
+              {activeTab === 'products' && 'Product Catalog'}
+              {activeTab === 'b2b_apps' && 'B2B Wholesale Approvals'}
+              {activeTab === 'orders' && 'Order Management'}
+              {activeTab === 'support' && 'Exceptional Support Cases'}
+            </span>
+          </div>
+
+          {/* Right: User Profile Dropdown & Quick Actions */}
+          <div className="flex items-center gap-4">
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-gray-600 hover:text-gold-600 font-medium bg-beige-100 hover:bg-beige-200 px-3 py-1.5 rounded transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Live Storefront</span>
+            </a>
+
+            {/* USER PROFILE DROPDOWN MENU */}
+            <div className="relative">
+              <button
+                onClick={() => setShowUserDropdown(!showUserDropdown)}
+                className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-beige-100 transition-colors border border-transparent hover:border-beige-300"
+              >
+                <div className="w-9 h-9 rounded-full bg-onyx-950 text-gold-500 border border-gold-500/40 flex items-center justify-center font-bold text-sm shadow">
+                  <User className="w-5 h-5" />
+                </div>
+                <div className="text-left hidden md:block">
+                  <p className="text-xs font-bold text-onyx-900 leading-tight">{user?.name || 'Super Admin'}</p>
+                  <p className="text-[10px] text-gold-600 font-semibold uppercase tracking-wider">
+                    {user?.role || 'SUPER_ADMIN'}
+                  </p>
+                </div>
+                <ChevronDown className="w-4 h-4 text-gray-500 hidden md:block" />
+              </button>
+
+              {/* DROPDOWN CONTAINER */}
+              {showUserDropdown && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowUserDropdown(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-onyx-950 text-white rounded-xl shadow-2xl border border-gold-500/30 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-4 py-3 border-b border-gray-800 space-y-1">
+                      <p className="font-serif font-bold text-sm text-gold-500">{user?.name}</p>
+                      <p className="text-xs text-gray-300 font-mono truncate">{user?.email || 'admin@brandname.com'}</p>
+                      <div className="inline-block bg-gold-500/20 text-gold-400 border border-gold-500/30 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mt-1">
+                        Role: {user?.role || 'SUPER_ADMIN'}
+                      </div>
+                    </div>
+
+                    <div className="py-1 text-xs">
+                      <button
+                        onClick={() => {
+                          setShowUserDropdown(false);
+                          setShowProfileModal(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-onyx-800 text-gray-200 hover:text-gold-500 transition-colors"
+                      >
+                        <User className="w-4 h-4 text-gold-500" />
+                        <span>View Administrator Profile</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowUserDropdown(false);
+                          handleTabSwitch('overview');
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-onyx-800 text-gray-200 hover:text-gold-500 transition-colors"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-gold-500" />
+                        <span>System Metrics & Overview</span>
+                      </button>
+                    </div>
+
+                    <div className="pt-1 border-t border-gray-800">
+                      <button
+                        onClick={() => {
+                          setShowUserDropdown(false);
+                          logout();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition-colors font-medium text-xs"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out of Command Center</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* MAIN CONTENT AREA */}
+        <main className="flex-1 p-8 space-y-8 overflow-y-auto">
         {/* TAB 1: METRICS OVERVIEW */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
@@ -2059,6 +2173,73 @@ export const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* ADMIN PROFILE MODAL */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-onyx-950 border border-gold-500/40 text-beige-50 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-gold-500/20 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gold-500/10 text-gold-500 border border-gold-500/30 rounded-lg">
+                  <ShieldAlert className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-lg text-white">Administrator Profile</h3>
+                  <p className="text-[10px] text-gold-500 uppercase tracking-wider">System Command Credentials</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="text-gray-400 hover:text-white p-1 rounded transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="bg-onyx-900 border border-gray-800 p-4 rounded-lg space-y-2.5">
+                <div className="flex justify-between items-center pb-2 border-b border-gray-800">
+                  <span className="text-gray-400">Account Name:</span>
+                  <span className="font-bold text-white text-sm">{user?.name}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-gray-800">
+                  <span className="text-gray-400">Email Address:</span>
+                  <span className="font-mono text-gold-400">{user?.email || 'admin@brandname.com'}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-gray-800">
+                  <span className="text-gray-400">Access Role Level:</span>
+                  <span className="font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded uppercase text-[10px]">
+                    {user?.role}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Token Security:</span>
+                  <span className="text-gray-300 font-mono">JWT Bearer Encrypted</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowProfileModal(false);
+                  logout();
+                }}
+                className="bg-rose-950/60 border border-rose-500/40 text-rose-300 font-semibold px-4 py-2 rounded text-xs hover:bg-rose-900 transition-colors"
+              >
+                Sign Out
+              </button>
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="bg-gold-500 text-onyx-950 font-bold px-5 py-2 rounded text-xs hover:bg-gold-400 transition-colors shadow"
+              >
+                Close Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
     </div>
   );
 };

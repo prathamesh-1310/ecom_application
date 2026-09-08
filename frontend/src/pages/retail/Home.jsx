@@ -68,16 +68,8 @@ export const Home = () => {
                 to="/catalog"
                 className="bg-gold-500 text-onyx-950 font-semibold px-6 py-3 rounded text-xs uppercase tracking-wider hover:bg-gold-400 transition-all shadow-lg flex items-center gap-2"
               >
-                <span>Shop Retail Collection</span>
+                <span>Shop Jewelry Collection</span>
                 <ArrowRight className="w-4 h-4" />
-              </Link>
-
-              <Link
-                to="/register-b2b"
-                className="bg-onyx-800 text-gold-500 border border-gold-500/40 px-6 py-3 rounded text-xs uppercase tracking-wider hover:bg-onyx-700 transition-all flex items-center gap-2"
-              >
-                <Building2 className="w-4 h-4" />
-                <span>B2B Wholesale Portal</span>
               </Link>
             </div>
           </div>

@@ -39,7 +39,7 @@ export const Navbar = () => {
                 AURELIA
               </span>
               <span className="text-[9px] tracking-[0.25em] text-gray-400 uppercase -mt-1">
-                {isAdmin ? 'Admin Control Center' : isB2B ? 'B2B Wholesale Portal' : 'Fine Piercing Jewelry'}
+                {isAdmin ? 'Admin Control Center' : 'Fine Piercing Jewelry'}
               </span>
             </Link>
           </div>
@@ -49,7 +49,7 @@ export const Navbar = () => {
             <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center flex-1 max-w-md mx-8 relative">
               <input
                 type="text"
-                placeholder={isB2B ? "Search wholesale products, SKU, MOQ..." : "Search piercing jewelry, materials..."}
+                placeholder="Search piercing jewelry, materials..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-onyx-800 text-xs text-beige-50 placeholder-gray-400 pl-10 pr-4 py-2 rounded-full border border-gold-500/30 focus:outline-none focus:border-gold-500 transition-colors"
@@ -137,10 +137,7 @@ export const Navbar = () => {
                 Admin Control Center
               </Link>
               <Link to="/catalog" className="text-gray-300 hover:text-gold-500 transition-colors">
-                Preview Retail Store
-              </Link>
-              <Link to="/b2b/catalog" className="text-gray-300 hover:text-gold-500 transition-colors">
-                Preview B2B Portal
+                Preview Storefront
               </Link>
               <Link to="/policy" className="ml-auto text-gold-500/80 hover:text-gold-500 transition-colors">
                 No Return Policy Document
@@ -157,11 +154,6 @@ export const Navbar = () => {
               <Link to="/catalog?category=ear-piercing" className="text-gray-300 hover:text-gold-500 transition-colors">
                 Ear Piercing
               </Link>
-              {isB2B && (
-                <Link to="/b2b/catalog" className="text-gold-500 font-semibold hover:underline">
-                  Studio Needles & Tools (B2B Only)
-                </Link>
-              )}
               <Link to="/policy" className="ml-auto text-gold-500/80 hover:text-gold-500 transition-colors">
                 No Return Policy
               </Link>

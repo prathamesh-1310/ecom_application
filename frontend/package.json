@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:b2b": "vite --open b2b.html",
+    "dev:admin": "vite --open admin.html",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

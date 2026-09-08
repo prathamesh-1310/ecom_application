@@ -22,7 +22,7 @@ export const PolicyPage = () => {
           </h3>
         </div>
         <p className="text-xs text-gray-300 leading-relaxed pl-9">
-          All purchases on both our Retail website (<code className="text-gold-400">www.brandname.com</code>) and B2B Wholesale Portal (<code className="text-gold-400">b2b.brandname.com</code>) are final. Products cannot be returned, exchanged, or refunded after order placement, except where required by applicable law or where the admin approves an exceptional case.
+          All purchases on our store (<code className="text-gold-400">www.brandname.com</code>) are final. Products cannot be returned, exchanged, or refunded after order placement, except where required by applicable law or where an administrator approves an exceptional case review.
         </p>
       </div>
 

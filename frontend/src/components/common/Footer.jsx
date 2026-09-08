@@ -56,14 +56,14 @@ export const Footer = () => {
               AURELIA
             </span>
             <p className="text-gray-400 leading-relaxed text-[11px]">
-              Aurelia is a premier piercing jewelry house committed to luxurious aesthetics, medical-grade body safety, and seamless B2B wholesale supply.
+              Aurelia is a premier body jewelry house committed to luxurious aesthetics, medical-grade body safety, and sterile packaging.
             </p>
           </div>
 
           <div>
-            <h4 className="font-semibold text-white uppercase tracking-wider mb-3">Retail Store</h4>
+            <h4 className="font-semibold text-white uppercase tracking-wider mb-3">Shop Jewelry</h4>
             <ul className="space-y-2">
-              <li><Link to="/catalog" className="hover:text-gold-500 transition-colors">Catalog Overview</Link></li>
+              <li><Link to="/catalog" className="hover:text-gold-500 transition-colors">All Collections</Link></li>
               <li><Link to="/catalog?category=nose-rings" className="hover:text-gold-500 transition-colors">Nose Rings & Septum</Link></li>
               <li><Link to="/catalog?category=ear-piercing" className="hover:text-gold-500 transition-colors">Ear Piercing Studs</Link></li>
               <li><Link to="/cart" className="hover:text-gold-500 transition-colors">Shopping Cart</Link></li>
@@ -71,11 +71,11 @@ export const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-semibold text-white uppercase tracking-wider mb-3">B2B Wholesale</h4>
+            <h4 className="font-semibold text-white uppercase tracking-wider mb-3">Customer Care</h4>
             <ul className="space-y-2">
-              <li><Link to="/register-b2b" className="hover:text-gold-500 transition-colors">Apply for Wholesale Account</Link></li>
-              <li><Link to="/b2b/catalog" className="hover:text-gold-500 transition-colors">Wholesale Tools & Needles</Link></li>
-              <li><Link to="/policy" className="hover:text-gold-500 transition-colors">B2B Terms & MOQ Rules</Link></li>
+              <li><Link to="/account" className="hover:text-gold-500 transition-colors">My Account</Link></li>
+              <li><Link to="/account" className="hover:text-gold-500 transition-colors">Order Tracking</Link></li>
+              <li><Link to="/policy" className="hover:text-gold-500 transition-colors">Care & Hygiene Guide</Link></li>
             </ul>
           </div>
 

@@ -181,12 +181,7 @@ export const Login = () => {
             <span>{loading ? 'Authenticating...' : 'Sign In'}</span>
           </button>
 
-          <div className="pt-2 flex justify-between text-gray-500 text-[11px]">
-            <span>Need a wholesale account?</span>
-            <Link to="/register-b2b" className="text-gold-600 font-semibold hover:underline">
-              Apply for B2B Registration
-            </Link>
-          </div>
+
         </form>
       ) : (
         /* Registration Form */
