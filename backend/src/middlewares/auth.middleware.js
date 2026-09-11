@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
+import { JWT_SECRET } from '../config/jwt.js';
 
 export const authenticateToken = async (req, res, next) => {
   try {
@@ -10,7 +11,7 @@ export const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Access token required' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecret_piercing_ecom_jwt_key_2026');
+    const decoded = jwt.verify(token, JWT_SECRET);
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {

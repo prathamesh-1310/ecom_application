@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
+import { JWT_SECRET } from '../config/jwt.js';
 import { createRazorpayOrder, verifyRazorpayPayment } from '../services/payment.service.js';
 import { sendOrderConfirmationEmail } from '../services/email.service.js';
 
@@ -25,7 +26,7 @@ export const createOrder = async (req, res) => {
       try {
         const token = req.headers.authorization.split(' ')[1];
         if (token) {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecret_piercing_ecom_jwt_key_2026');
+          const decoded = jwt.verify(token, JWT_SECRET);
           if (decoded && decoded.userId) {
             userId = decoded.userId;
           }
@@ -55,7 +56,7 @@ export const createOrder = async (req, res) => {
           userId = existingUser.id;
           newAuthToken = jwt.sign(
             { userId: existingUser.id, role: existingUser.role },
-            process.env.JWT_SECRET || 'supersecret_piercing_ecom_jwt_key_2026',
+            JWT_SECRET,
             { expiresIn: '7d' }
           );
           authUserObj = {
@@ -92,7 +93,7 @@ export const createOrder = async (req, res) => {
         userId = newUser.id;
         newAuthToken = jwt.sign(
           { userId: newUser.id, role: newUser.role },
-          process.env.JWT_SECRET || 'supersecret_piercing_ecom_jwt_key_2026',
+          JWT_SECRET,
           { expiresIn: '7d' }
         );
         authUserObj = {

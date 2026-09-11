@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
+import { JWT_SECRET } from '../config/jwt.js';
 
 export const registerRetail = async (req, res) => {
   try {
@@ -28,7 +29,7 @@ export const registerRetail = async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || 'supersecret_piercing_ecom_jwt_key_2026',
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -113,7 +114,7 @@ export const registerB2B = async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || 'supersecret_piercing_ecom_jwt_key_2026',
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -155,7 +156,7 @@ export const login = async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || 'supersecret_piercing_ecom_jwt_key_2026',
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
 
