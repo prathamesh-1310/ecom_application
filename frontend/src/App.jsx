@@ -16,6 +16,7 @@ import { CustomerAccount } from './pages/retail/CustomerAccount';
 import { PolicyPage } from './pages/retail/PolicyPage';
 
 import { Login } from './pages/auth/Login';
+import { B2BLogin } from './pages/b2b/B2BLogin';
 import { B2BRegister } from './pages/b2b/B2BRegister';
 import { B2BPendingApproval } from './pages/b2b/B2BPendingApproval';
 import { B2BCatalog } from './pages/b2b/B2BCatalog';
@@ -45,12 +46,30 @@ export default function App() {
                   <Route path="/policy" element={<PolicyPage />} />
 
                   {/* B2B Routes */}
+                  <Route path="/b2b/login" element={<B2BLogin />} />
+                  <Route path="/partner-login" element={<B2BLogin />} />
                   <Route path="/register-b2b" element={<B2BRegister />} />
                   <Route path="/b2b/pending" element={<B2BPendingApproval />} />
                   <Route path="/b2b/catalog" element={<B2BCatalog />} />
 
-                  {/* Admin Route */}
-                  <Route path="/admin" element={<AdminDashboard />} />
+                  {/* Admin Route Redirect */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <React.Fragment>
+                        {(() => {
+                          if (typeof window !== 'undefined') {
+                            window.location.href = '/admin';
+                          }
+                          return (
+                            <div className="min-h-screen bg-onyx-950 text-gold-500 font-serif flex items-center justify-center p-8">
+                              Redirecting to Admin Portal...
+                            </div>
+                          );
+                        })()}
+                      </React.Fragment>
+                    }
+                  />
 
                   {/* Fallback */}
                   <Route path="*" element={<Navigate to="/" replace />} />

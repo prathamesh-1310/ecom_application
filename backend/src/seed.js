@@ -20,8 +20,8 @@ async function seed() {
   });
 
   // 2. Create Users (Super Admin, Retail Customer, B2B Approved Customer, B2B Pending Customer)
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const userPassword = await bcrypt.hash('user123', 10);
+  const adminPassword = await bcrypt.hash(process.env.SEED_ADMIN_PASSWORD || 'admin123', 10);
+  const userPassword = await bcrypt.hash(process.env.SEED_USER_PASSWORD || 'user123', 10);
 
   const admin = await prisma.user.create({
     data: {

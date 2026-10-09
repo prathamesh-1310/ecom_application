@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Filter, SlidersHorizontal, Search } from 'lucide-react';
-import { PolicyBadge } from '../../components/common/PolicyBadge';
 import { useCart } from '../../context/CartContext';
 
 import { useToast } from '../../context/ToastContext';
@@ -16,12 +15,13 @@ export const Catalog = () => {
   const { showToast } = useToast();
 
   const categoryParam = searchParams.get('category') || '';
+  const subcategoryParam = searchParams.get('subcategory') || '';
   const searchParam = searchParams.get('search') || '';
-  const [sortOption, setSortOption] = useState('newest');
+  const [sortOption, setSortOption] = useState('price_low_high');
 
   useEffect(() => {
     fetchCatalogData();
-  }, [categoryParam, searchParam, sortOption]);
+  }, [categoryParam, subcategoryParam, searchParam, sortOption]);
 
   const fetchCatalogData = async () => {
     try {
@@ -31,11 +31,12 @@ export const Catalog = () => {
           params: {
             platform: 'RETAIL',
             categorySlug: categoryParam,
+            subcategorySlug: subcategoryParam,
             search: searchParam,
             sort: sortOption,
           },
         }),
-        axios.get('/api/categories'),
+        axios.get('/api/categories?platform=RETAIL'),
       ]);
 
       if (prodRes.data.success) setProducts(prodRes.data.products);
@@ -54,15 +55,19 @@ export const Catalog = () => {
     }
   };
 
+  const selectedCategoryObj = categories.find((c) => c.slug === categoryParam);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
 
       {/* Catalog Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gold-500/20 pb-6">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-onyx-900">Retail Piercing Collection</h1>
+          <h1 className="text-3xl font-serif font-bold text-onyx-900">
+            {selectedCategoryObj ? selectedCategoryObj.name : 'Retail Piercing Collection'}
+          </h1>
           <p className="text-xs text-gray-500 mt-1">
-            Browse implant-grade titanium & solid gold piercing jewelry. Strict No Return Policy applies.
+            {selectedCategoryObj?.description || 'Browse implant-grade titanium & solid gold piercing jewelry.'}
           </p>
         </div>
 
@@ -74,14 +79,12 @@ export const Catalog = () => {
             onChange={(e) => setSortOption(e.target.value)}
             className="bg-white border border-gray-300 rounded px-3 py-1.5 text-xs text-onyx-900 focus:outline-none focus:border-gold-500"
           >
-            <option value="newest">Sort by: Newest Arrivals</option>
-            <option value="price_low_high">Price: Low to High</option>
+            <option value="price_low_high">Sort by: Price: Low to High</option>
             <option value="price_high_low">Price: High to Low</option>
+            <option value="recommended">Recommended</option>
           </select>
         </div>
       </div>
-
-      <PolicyBadge variant="compact" />
 
       {/* Main Grid with Sidebar Filter */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -89,35 +92,85 @@ export const Catalog = () => {
         <aside className="space-y-6 bg-white p-5 rounded-lg border border-beige-200 shadow-sm h-fit">
           <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
             <Filter className="w-4 h-4 text-gold-600" />
-            <h3 className="font-serif font-semibold text-sm text-onyx-900 uppercase">Categories</h3>
+            <h3 className="font-serif font-semibold text-sm text-onyx-900 uppercase">
+              {selectedCategoryObj ? 'Subcategories' : 'Categories'}
+            </h3>
           </div>
 
-          <ul className="space-y-2 text-xs">
-            <li>
+          {selectedCategoryObj ? (
+            <div className="space-y-3 text-xs">
               <button
                 onClick={() => setSearchParams({})}
-                className={`w-full text-left py-1.5 px-3 rounded transition-colors ${
-                  !categoryParam ? 'bg-onyx-900 text-gold-500 font-semibold' : 'text-gray-600 hover:text-onyx-900'
-                }`}
+                className="text-[11px] text-gold-600 hover:text-gold-700 font-semibold flex items-center gap-1 transition-colors"
               >
-                All Categories
+                &larr; All Categories
               </button>
-            </li>
-            {categories.map((cat) => (
-              <li key={cat.id}>
+
+              <div className="text-[11px] font-bold text-onyx-900 uppercase tracking-wider border-b border-gray-100 pb-1">
+                {selectedCategoryObj.name}
+              </div>
+
+              <ul className="space-y-1.5">
+                <li>
+                  <button
+                    onClick={() => setSearchParams({ category: categoryParam })}
+                    className={`w-full text-left py-1.5 px-3 rounded transition-colors ${
+                      !subcategoryParam ? 'bg-onyx-900 text-gold-500 font-semibold' : 'text-gray-600 hover:text-onyx-900'
+                    }`}
+                  >
+                    All {selectedCategoryObj.name}
+                  </button>
+                </li>
+                {selectedCategoryObj.subcategories && selectedCategoryObj.subcategories.length > 0 ? (
+                  selectedCategoryObj.subcategories.map((sub) => (
+                    <li key={sub.id}>
+                      <button
+                        onClick={() => setSearchParams({ category: categoryParam, subcategory: sub.slug })}
+                        className={`w-full text-left py-1.5 px-3 rounded transition-colors ${
+                          subcategoryParam === sub.slug
+                            ? 'bg-onyx-900 text-gold-500 font-semibold'
+                            : 'text-gray-600 hover:text-onyx-900'
+                        }`}
+                      >
+                        {sub.name}
+                      </button>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-[11px] text-gray-400 italic px-3 py-1">
+                    No subcategories available
+                  </li>
+                )}
+              </ul>
+            </div>
+          ) : (
+            <ul className="space-y-2 text-xs">
+              <li>
                 <button
-                  onClick={() => setSearchParams({ category: cat.slug })}
+                  onClick={() => setSearchParams({})}
                   className={`w-full text-left py-1.5 px-3 rounded transition-colors ${
-                    categoryParam === cat.slug
-                      ? 'bg-onyx-900 text-gold-500 font-semibold'
-                      : 'text-gray-600 hover:text-onyx-900'
+                    !categoryParam ? 'bg-onyx-900 text-gold-500 font-semibold' : 'text-gray-600 hover:text-onyx-900'
                   }`}
                 >
-                  {cat.name}
+                  All Categories
                 </button>
               </li>
-            ))}
-          </ul>
+              {categories.map((cat) => (
+                <li key={cat.id}>
+                  <button
+                    onClick={() => setSearchParams({ category: cat.slug })}
+                    className={`w-full text-left py-1.5 px-3 rounded transition-colors ${
+                      categoryParam === cat.slug
+                        ? 'bg-onyx-900 text-gold-500 font-semibold'
+                        : 'text-gray-600 hover:text-onyx-900'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </aside>
 
         {/* Product Grid */}

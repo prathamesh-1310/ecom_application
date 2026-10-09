@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { ShieldCheck, Lock, CheckCircle, UserCheck, KeyRound } from 'lucide-react';
+import { ShieldCheck, Lock, CheckCircle, UserCheck, KeyRound, FileText } from 'lucide-react';
 import { PolicyCheckbox } from '../../components/common/PolicyCheckbox';
-import { PolicyBadge } from '../../components/common/PolicyBadge';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -121,14 +120,24 @@ export const CheckoutPage = () => {
           <p><strong>Policy Acceptance Record:</strong> Accepted v1.0 at {new Date(orderComplete.policyAcceptedAt).toLocaleString()}</p>
         </div>
 
-        <PolicyBadge />
+        <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+          <a
+            href={`/api/orders/${orderComplete.id}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gold-500 text-onyx-950 font-bold px-6 py-3 rounded text-xs uppercase tracking-wider hover:bg-gold-400 transition-all shadow-lg flex items-center gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Download Invoice PDF</span>
+          </a>
 
-        <button
-          onClick={() => navigate('/account')}
-          className="bg-onyx-900 text-gold-500 font-semibold px-6 py-3 rounded text-xs uppercase tracking-wider hover:bg-gold-500 hover:text-onyx-900 transition-colors shadow-lg"
-        >
-          View Order Status in My Account
-        </button>
+          <button
+            onClick={() => navigate('/account')}
+            className="bg-onyx-900 text-gold-500 font-semibold px-6 py-3 rounded text-xs uppercase tracking-wider hover:bg-gold-500 hover:text-onyx-900 transition-colors shadow-lg"
+          >
+            View Order Status in My Account
+          </button>
+        </div>
       </div>
     );
   }

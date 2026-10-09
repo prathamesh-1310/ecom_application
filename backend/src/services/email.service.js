@@ -42,14 +42,30 @@ export const sendEmail = async ({ to, subject, html, text }) => {
   }
 };
 
+const escapeHtml = (str) => {
+  if (typeof str !== 'string') return str;
+  return str.replace(/[&<>"']/g, (match) => {
+    const escapes = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    return escapes[match];
+  });
+};
+
 export const sendOrderConfirmationEmail = async (order, userEmail) => {
-  const subject = `Order Confirmation #${order.orderNumber} - Strict Policy Notice`;
+  const safeOrderNumber = escapeHtml(order.orderNumber);
+  const safePolicyVersion = escapeHtml(order.policyVersion || '1.0');
+  const subject = `Order Confirmation #${safeOrderNumber} - Strict Policy Notice`;
   const html = `
     <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #FAF8F5; padding: 30px; border: 1px solid #E2D9CC;">
       <h2 style="color: #111111; font-family: Georgia, serif; text-align: center; letter-spacing: 1px;">PIERCING JEWELRY STORE</h2>
       <hr style="border: 0; border-top: 1px solid #C9A96E; margin: 20px 0;" />
       <h3 style="color: #111111;">Thank you for your order!</h3>
-      <p style="color: #444;">Order Number: <strong>${order.orderNumber}</strong></p>
+      <p style="color: #444;">Order Number: <strong>${safeOrderNumber}</strong></p>
       <p style="color: #444;">Total Amount: <strong>₹${order.totalAmount.toFixed(2)}</strong></p>
       
       <div style="background: #111111; color: #FAF8F5; padding: 15px; border-radius: 4px; margin: 25px 0;">
@@ -59,7 +75,7 @@ export const sendOrderConfirmationEmail = async (order, userEmail) => {
         </p>
       </div>
 
-      <p style="font-size: 12px; color: #777; text-align: center;">Accepted Policy Version: ${order.policyVersion} at ${new Date(order.policyAcceptedAt).toLocaleString()}</p>
+      <p style="font-size: 12px; color: #777; text-align: center;">Accepted Policy Version: ${safePolicyVersion} at ${new Date(order.policyAcceptedAt).toLocaleString()}</p>
     </div>
   `;
   return sendEmail({ to: userEmail, subject, html });

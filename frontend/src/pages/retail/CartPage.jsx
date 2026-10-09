@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, ShoppingBag, ArrowRight, Tag } from 'lucide-react';
-import { PolicyBadge } from '../../components/common/PolicyBadge';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -57,8 +56,6 @@ export const CartPage = () => {
         <p className="text-xs text-gray-500 mt-1">Review your piercing jewelry and wholesale quantities before checkout.</p>
       </div>
 
-      <PolicyBadge variant="compact" />
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Cart Items List */}
         <div className="lg:col-span-2 space-y-4">
@@ -81,9 +78,6 @@ export const CartPage = () => {
                   <span className="text-xs text-gray-500 block">{item.variantName}</span>
                 )}
                 <span className="text-xs text-gray-400 font-mono block">SKU: {item.productSku}</span>
-                {isB2B && item.moq > 1 && (
-                  <span className="text-[10px] text-gold-600 font-semibold">MOQ: {item.moq} units</span>
-                )}
               </div>
 
               <div className="flex items-center gap-3">
@@ -177,8 +171,6 @@ export const CartPage = () => {
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
-
-          <PolicyBadge />
         </div>
       </div>
     </div>

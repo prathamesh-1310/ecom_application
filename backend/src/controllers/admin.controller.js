@@ -2,13 +2,25 @@ import prisma from '../config/prisma.js';
 
 export const getDashboardStats = async (req, res) => {
   try {
+    const { startDate, endDate } = req.query;
+
+    const dateFilter = {};
+    if (startDate) dateFilter.gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      dateFilter.lte = end;
+    }
+
+    const orderDateWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
     // Retail stats
-    const retailOrders = await prisma.order.findMany({ where: { platform: 'RETAIL' } });
+    const retailOrders = await prisma.order.findMany({ where: { platform: 'RETAIL', ...orderDateWhere } });
     const retailRevenue = retailOrders.reduce((sum, o) => (o.paymentStatus === 'Paid' ? sum + o.totalAmount : sum), 0);
     const retailPendingOrders = retailOrders.filter((o) => o.orderStatus === 'Pending' || o.orderStatus === 'Processing').length;
 
     // B2B stats
-    const b2bOrders = await prisma.order.findMany({ where: { platform: 'B2B' } });
+    const b2bOrders = await prisma.order.findMany({ where: { platform: 'B2B', ...orderDateWhere } });
     const b2bRevenue = b2bOrders.reduce((sum, o) => (o.paymentStatus === 'Paid' ? sum + o.totalAmount : sum), 0);
     const b2bPendingOrders = b2bOrders.filter((o) => o.orderStatus === 'Pending' || o.orderStatus === 'Processing').length;
 

@@ -8,6 +8,7 @@ node_modules/
 .env.*.local
 *.env
 backend/.env
+frontend/.env
 
 # Build & Output directories
 dist/

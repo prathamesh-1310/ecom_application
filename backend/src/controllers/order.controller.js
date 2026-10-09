@@ -4,6 +4,8 @@ import prisma from '../config/prisma.js';
 import { JWT_SECRET } from '../config/jwt.js';
 import { createRazorpayOrder, verifyRazorpayPayment } from '../services/payment.service.js';
 import { sendOrderConfirmationEmail } from '../services/email.service.js';
+import { generateOrderInvoicePdf } from '../services/pdf.service.js';
+import { handleServerError } from '../utils/errorHandler.js';
 
 export const createOrder = async (req, res) => {
   try {
@@ -266,13 +268,28 @@ export const createOrder = async (req, res) => {
       user: authUserObj,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Order creation failed', error: error.message });
+    return handleServerError(res, error, 'Order creation failed');
   }
 };
 
 export const verifyPayment = async (req, res) => {
   try {
     const { orderId, razorpayPaymentId, razorpayOrderId, razorpaySignature } = req.body;
+
+    const existingOrder = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!existingOrder) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (req.user) {
+      const isAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'STAFF_ADMIN';
+      if (!isAdmin && existingOrder.userId && existingOrder.userId !== req.user.id) {
+        const shippingEmail = existingOrder.shippingAddressJson ? JSON.parse(existingOrder.shippingAddressJson).email : null;
+        if (shippingEmail !== req.user.email) {
+          return res.status(403).json({ success: false, message: 'Access denied: You do not own this order record.' });
+        }
+      }
+    }
 
     const isValid = verifyRazorpayPayment(razorpayOrderId, razorpayPaymentId, razorpaySignature);
 
@@ -314,7 +331,7 @@ export const verifyPayment = async (req, res) => {
       order,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Payment verification error', error: error.message });
+    return handleServerError(res, error, 'Payment verification failed');
   }
 };
 
@@ -336,7 +353,7 @@ export const getMyOrders = async (req, res) => {
     });
     return res.json({ success: true, orders });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error fetching orders', error: error.message });
+    return handleServerError(res, error, 'Error fetching your orders');
   }
 };
 
@@ -357,9 +374,22 @@ export const getOrderById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
+    // Ownership & Access Control Check
+    if (req.user) {
+      const isAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'STAFF_ADMIN';
+      if (!isAdmin && order.userId !== req.user.id) {
+        const shippingEmail = order.shippingAddressJson ? JSON.parse(order.shippingAddressJson).email : null;
+        if (shippingEmail !== req.user.email) {
+          return res.status(403).json({ success: false, message: 'Access denied: You do not own this order record.' });
+        }
+      }
+    } else {
+      return res.status(401).json({ success: false, message: 'Authentication required to view order details.' });
+    }
+
     return res.json({ success: true, order });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error fetching order details', error: error.message });
+    return handleServerError(res, error, 'Error fetching order details');
   }
 };
 
@@ -370,6 +400,15 @@ export const cancelOrder = async (req, res) => {
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Ownership & Access Control Check
+    const isAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'STAFF_ADMIN';
+    if (!isAdmin && order.userId !== req.user.id) {
+      const shippingEmail = order.shippingAddressJson ? JSON.parse(order.shippingAddressJson).email : null;
+      if (shippingEmail !== req.user.email) {
+        return res.status(403).json({ success: false, message: 'Access denied: You do not own this order record.' });
+      }
     }
 
     // Cancellation rule: Only allowed if order is still Pending or Confirmed (before Processing / Shipped)
@@ -389,13 +428,27 @@ export const cancelOrder = async (req, res) => {
 
     return res.json({ success: true, message: 'Order cancelled successfully', order: updatedOrder });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error cancelling order', error: error.message });
+    return handleServerError(res, error, 'Error cancelling order');
   }
 };
 
 export const getAllOrdersAdmin = async (req, res) => {
   try {
+    const { startDate, endDate } = req.query;
+
+    const where = {};
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
     const orders = await prisma.order.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
         items: {
@@ -415,7 +468,7 @@ export const getAllOrdersAdmin = async (req, res) => {
     });
     return res.json({ success: true, orders });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error fetching all admin orders', error: error.message });
+    return handleServerError(res, error, 'Error fetching admin orders');
   }
 };
 
@@ -440,6 +493,48 @@ export const updateOrderStatusAdmin = async (req, res) => {
 
     return res.json({ success: true, message: 'Order status updated successfully', order: updatedOrder });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error updating order status', error: error.message });
+    return handleServerError(res, error, 'Error updating order status');
+  }
+};
+
+export const downloadOrderPdf = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, name: true, email: true, phone: true, role: true, companyName: true, gstNumber: true } },
+        items: {
+          include: {
+            product: {
+              include: {
+                images: { orderBy: { displayOrder: 'asc' } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Ownership & Access Control Check
+    if (req.user) {
+      const isAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'STAFF_ADMIN';
+      if (!isAdmin && order.userId !== req.user.id) {
+        const shippingEmail = order.shippingAddressJson ? JSON.parse(order.shippingAddressJson).email : null;
+        if (shippingEmail !== req.user.email) {
+          return res.status(403).json({ success: false, message: 'Access denied: You do not own this order record.' });
+        }
+      }
+    } else {
+      return res.status(401).json({ success: false, message: 'Authentication required to download order invoice.' });
+    }
+
+    await generateOrderInvoicePdf(order, res);
+  } catch (error) {
+    return handleServerError(res, error, 'Error generating order invoice PDF');
   }
 };

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingBag, User, Search, ShieldAlert, LogOut, LayoutDashboard } from 'lucide-react';
+import axios from 'axios';
+import { ShoppingBag, User, Search, LogOut, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 
@@ -8,8 +9,25 @@ export const Navbar = () => {
   const { user, logout } = useAuth();
   const { totalItems, platform } = useCart();
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    fetchNavCategories();
+  }, [platform]);
+
+  const fetchNavCategories = async () => {
+    try {
+      const targetPlatform = platform === 'B2B' ? 'B2B' : 'RETAIL';
+      const res = await axios.get(`/api/categories?platform=${targetPlatform}`);
+      if (res.data.success) {
+        setCategories(res.data.categories || []);
+      }
+    } catch (err) {
+      console.error('Error fetching navbar categories:', err);
+    }
+  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -21,15 +39,10 @@ export const Navbar = () => {
   const isB2B = platform === 'B2B';
   const isAdmin = user && (user.role === 'SUPER_ADMIN' || user.role === 'STAFF_ADMIN');
   const isCurrentAdminPage = location.pathname.startsWith('/admin');
+  const currentCategorySlug = new URLSearchParams(location.search).get('category');
 
   return (
     <header className="sticky top-0 z-50 bg-onyx-900 text-beige-50 shadow-lg border-b border-gold-500/20">
-      {/* Top Banner Notice */}
-      <div className="bg-gold-500/10 text-gold-500 border-b border-gold-500/20 py-1.5 px-4 text-center text-xs tracking-wider flex items-center justify-center gap-2">
-        <ShieldAlert className="w-3.5 h-3.5" />
-        <span>Strict No Return & No Refund Policy Enforced • All Purchases Final</span>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo & Brand */}
@@ -60,15 +73,15 @@ export const Navbar = () => {
 
           {/* Actions & Links */}
           <div className="flex items-center gap-5">
-            {/* Back to Admin Dashboard Button: Shown ONLY when Super Admin is outside /admin (e.g. on Policy page) */}
+            {/* Back to Admin Dashboard Button: Shown ONLY when Super Admin is outside /admin */}
             {isAdmin && !isCurrentAdminPage && (
-              <Link
-                to="/admin"
+              <a
+                href="/admin"
                 className="flex items-center gap-2 text-xs text-gold-500 bg-gold-500/10 px-4 py-2 rounded-md border border-gold-500/30 hover:bg-gold-500 hover:text-onyx-950 font-bold transition-all shadow"
               >
                 <LayoutDashboard className="w-4 h-4" />
                 <span>&larr; Back to Admin Panel</span>
-              </Link>
+              </a>
             )}
 
             {/* User Profile Dropdown */}
@@ -88,18 +101,29 @@ export const Navbar = () => {
                     )}
                   </div>
 
-                  {isAdmin && !isCurrentAdminPage && (
-                    <Link to="/admin" className="block px-4 py-2 hover:bg-onyx-800 text-gold-500 font-semibold transition-colors">
-                      Admin Dashboard
-                    </Link>
-                  )}
-
-                  <Link to="/policy" className="block px-4 py-2 hover:bg-onyx-800 hover:text-gold-500 transition-colors">
-                    No Return Policy
+                  <Link
+                    to="/account"
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-onyx-800 text-gray-300 hover:text-gold-500 transition-colors border-b border-gray-800"
+                  >
+                    <User className="w-3.5 h-3.5 text-gold-500" />
+                    <span>My Account</span>
                   </Link>
 
+                  {isAdmin && (
+                    <a
+                      href="/admin"
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-onyx-800 text-gold-500 font-semibold transition-colors border-b border-gray-800"
+                    >
+                      <LayoutDashboard className="w-3.5 h-3.5 text-gold-500" />
+                      <span>Admin Dashboard</span>
+                    </a>
+                  )}
+
                   <button
-                    onClick={logout}
+                    onClick={() => {
+                      logout();
+                      window.location.href = '/login';
+                    }}
                     className="w-full text-left flex items-center gap-2 px-4 py-2 text-red-400 hover:bg-onyx-800 transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -130,33 +154,44 @@ export const Navbar = () => {
         </div>
 
         {/* Secondary Navigation Row */}
-        <nav className="flex items-center gap-6 py-2 border-t border-gold-500/10 text-xs tracking-wider uppercase">
+        <nav className="flex items-center gap-6 py-2 border-t border-gold-500/10 text-xs tracking-wider uppercase overflow-x-auto no-scrollbar">
           {isAdmin ? (
             <>
-              <Link to="/admin" className={`font-bold transition-colors ${isCurrentAdminPage ? 'text-gold-500' : 'text-gray-300 hover:text-gold-500'}`}>
+              <a href="/admin" className={`font-bold transition-colors ${isCurrentAdminPage ? 'text-gold-500' : 'text-gray-300 hover:text-gold-500'}`}>
                 Admin Control Center
-              </Link>
+              </a>
               <Link to="/catalog" className="text-gray-300 hover:text-gold-500 transition-colors">
                 Preview Storefront
-              </Link>
-              <Link to="/policy" className="ml-auto text-gold-500/80 hover:text-gold-500 transition-colors">
-                No Return Policy Document
               </Link>
             </>
           ) : (
             <>
-              <Link to="/catalog" className="text-gray-300 hover:text-gold-500 transition-colors">
-                All Jewelry
+              {/* First Item is ALWAYS 'All' */}
+              <Link
+                to="/catalog"
+                className={`whitespace-nowrap transition-colors ${
+                  location.pathname === '/catalog' && !currentCategorySlug
+                    ? 'text-gold-500 font-bold'
+                    : 'text-gray-300 hover:text-gold-500'
+                }`}
+              >
+                All
               </Link>
-              <Link to="/catalog?category=nose-rings" className="text-gray-300 hover:text-gold-500 transition-colors">
-                Nose Rings & Septum
-              </Link>
-              <Link to="/catalog?category=ear-piercing" className="text-gray-300 hover:text-gold-500 transition-colors">
-                Ear Piercing
-              </Link>
-              <Link to="/policy" className="ml-auto text-gold-500/80 hover:text-gold-500 transition-colors">
-                No Return Policy
-              </Link>
+              {/* Dynamic Categories */}
+              {categories.map((cat) => {
+                const isSelected = currentCategorySlug === cat.slug;
+                return (
+                  <Link
+                    key={cat.id}
+                    to={`/catalog?category=${cat.slug}`}
+                    className={`whitespace-nowrap transition-colors ${
+                      isSelected ? 'text-gold-500 font-bold' : 'text-gray-300 hover:text-gold-500'
+                    }`}
+                  >
+                    {cat.name}
+                  </Link>
+                );
+              })}
             </>
           )}
         </nav>

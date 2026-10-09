@@ -178,6 +178,19 @@ export const updateCartItem = async (req, res) => {
     const { itemId } = req.params;
     const { quantity } = req.body;
 
+    const cartItem = await prisma.cartItem.findUnique({
+      where: { id: itemId },
+      include: { cart: true },
+    });
+
+    if (!cartItem) {
+      return res.status(404).json({ success: false, message: 'Cart item not found' });
+    }
+
+    if (req.user && cartItem.cart.userId && cartItem.cart.userId !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Access denied: You do not own this cart item' });
+    }
+
     if (quantity <= 0) {
       await prisma.cartItem.delete({ where: { id: itemId } });
       return res.json({ success: true, message: 'Item removed from cart' });
@@ -197,6 +210,20 @@ export const updateCartItem = async (req, res) => {
 export const removeCartItem = async (req, res) => {
   try {
     const { itemId } = req.params;
+
+    const cartItem = await prisma.cartItem.findUnique({
+      where: { id: itemId },
+      include: { cart: true },
+    });
+
+    if (!cartItem) {
+      return res.status(404).json({ success: false, message: 'Cart item not found' });
+    }
+
+    if (req.user && cartItem.cart.userId && cartItem.cart.userId !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Access denied: You do not own this cart item' });
+    }
+
     await prisma.cartItem.delete({ where: { id: itemId } });
     return res.json({ success: true, message: 'Item removed from cart' });
   } catch (error) {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { Package, ShieldAlert, FileText, AlertTriangle, Upload, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -19,8 +20,10 @@ export const CustomerAccount = () => {
   const [supportSuccess, setSupportSuccess] = useState('');
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    if (user) {
+      fetchOrders();
+    }
+  }, [user]);
 
   const fetchOrders = async () => {
     try {
@@ -69,7 +72,7 @@ export const CustomerAccount = () => {
   };
 
   if (!user) {
-    return <div className="text-center py-20 text-xs text-gray-500">Please sign in to view your account.</div>;
+    return <Navigate to="/login" replace />;
   }
 
   return (
@@ -145,17 +148,29 @@ export const CustomerAccount = () => {
                   <span>Timestamp: {new Date(ord.policyAcceptedAt).toLocaleString()}</span>
                 </div>
 
-                {/* Actions: Exceptional Support */}
-                <div className="pt-2 flex items-center justify-between">
+                {/* Actions: PDF Invoice & Exceptional Support */}
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100">
                   <span className="text-xs font-serif font-bold text-onyx-900">Total: ₹{ord.totalAmount.toFixed(2)}</span>
 
-                  <button
-                    onClick={() => setSupportModalOrder(ord)}
-                    className="text-xs bg-gold-500/10 text-gold-600 border border-gold-500/30 hover:bg-gold-500 hover:text-onyx-950 font-medium px-3 py-1.5 rounded transition-colors flex items-center gap-1.5"
-                  >
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    <span>Contact Support for Exceptional Issue</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`/api/orders/${ord.id}/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs bg-onyx-900 text-gold-400 hover:bg-gold-500 hover:text-onyx-950 font-bold px-3 py-1.5 rounded transition-all shadow flex items-center gap-1.5"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Download Invoice PDF</span>
+                    </a>
+
+                    <button
+                      onClick={() => setSupportModalOrder(ord)}
+                      className="text-xs bg-gold-500/10 text-gold-600 border border-gold-500/30 hover:bg-gold-500 hover:text-onyx-950 font-medium px-3 py-1.5 rounded transition-colors flex items-center gap-1.5"
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>Contact Support</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { ShieldCheck, ArrowRight, Sparkles, Building2 } from 'lucide-react';
-import { PolicyBadge } from '../../components/common/PolicyBadge';
+import { HeroBanner } from '../../components/common/HeroBanner';
 import { useCart } from '../../context/CartContext';
-
 import { useToast } from '../../context/ToastContext';
 
 export const Home = () => {
@@ -21,7 +20,7 @@ export const Home = () => {
     try {
       const [prodRes, catRes] = await Promise.all([
         axios.get('/api/products?platform=RETAIL'),
-        axios.get('/api/categories'),
+        axios.get('/api/categories?platform=RETAIL'),
       ]);
       if (prodRes.data.success) setFeaturedProducts(prodRes.data.products.slice(0, 6));
       if (catRes.data.success) setCategories(catRes.data.categories);
@@ -39,42 +38,8 @@ export const Home = () => {
 
   return (
     <div className="space-y-16 pb-16">
-
-      {/* Hero Section */}
-      <section className="relative bg-onyx-950 text-white min-h-[500px] flex items-center overflow-hidden border-b border-gold-500/30">
-        <div className="absolute inset-0 z-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-center" />
-        <div className="absolute inset-0 bg-gradient-to-r from-onyx-950 via-onyx-950/80 to-transparent z-10" />
-
-        <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="max-w-xl space-y-6">
-            <div className="inline-flex items-center gap-2 bg-gold-500/10 text-gold-500 border border-gold-500/30 px-3 py-1 rounded-full text-xs tracking-widest uppercase">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Solid 14K Gold & ASTM F136 Titanium</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl font-serif font-bold text-white leading-tight">
-              Elegance In Every <span className="text-gold-500 italic">Piercing</span>
-            </h1>
-
-            <p className="text-sm text-gray-300 leading-relaxed font-light">
-              Discover biocompatible luxury body jewelry crafted for nostrils, septums, helices, and tragus piercings. Designed with precision clasping and sealed sterile packaging.
-            </p>
-
-            {/* Strict Policy Banner Notice */}
-            <PolicyBadge variant="compact" />
-
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link
-                to="/catalog"
-                className="bg-gold-500 text-onyx-950 font-semibold px-6 py-3 rounded text-xs uppercase tracking-wider hover:bg-gold-400 transition-all shadow-lg flex items-center gap-2"
-              >
-                <span>Shop Jewelry Collection</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Dynamic Hero Banner Section */}
+      <HeroBanner platform="RETAIL" defaultCtaText="Shop Jewelry Collection" defaultCtaLink="/catalog" />
 
       {/* Featured Categories */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
@@ -134,9 +99,6 @@ export const Home = () => {
                   alt={prod.name}
                   className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <span className="absolute top-3 left-3 bg-onyx-900 text-gold-500 text-[10px] font-bold px-2 py-1 rounded">
-                  No Returns
-                </span>
               </div>
 
               <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
@@ -171,11 +133,6 @@ export const Home = () => {
             </div>
           ))}
         </div>
-      </section>
-
-      {/* Strict Policy Banner Banner Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <PolicyBadge />
       </section>
     </div>
   );

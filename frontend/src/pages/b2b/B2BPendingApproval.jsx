@@ -23,7 +23,7 @@ export const B2BPendingApproval = () => {
           <span>Restricted B2B Access</span>
         </div>
         <p className="text-gray-300 text-[11px]">
-          Wholesale prices, studio equipment catalogs, and MOQ volume discounts become accessible immediately upon admin approval.
+          Wholesale prices and studio equipment catalogs become accessible immediately upon admin approval.
         </p>
       </div>
 

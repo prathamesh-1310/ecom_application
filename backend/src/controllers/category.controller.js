@@ -2,10 +2,16 @@ import prisma from '../config/prisma.js';
 
 export const getCategories = async (req, res) => {
   try {
-    const { includeInactive } = req.query;
+    const { includeInactive, platform } = req.query;
     const where = {};
     if (includeInactive !== 'true') {
       where.status = 'ACTIVE';
+    }
+
+    if (platform === 'RETAIL') {
+      where.visibility = { in: ['RETAIL', 'BOTH'] };
+    } else if (platform === 'B2B') {
+      where.visibility = { in: ['B2B', 'BOTH'] };
     }
 
     const categories = await prisma.category.findMany({
@@ -22,13 +28,14 @@ export const getCategories = async (req, res) => {
 
 export const createCategory = async (req, res) => {
   try {
-    const { name, slug, description, image } = req.body;
+    const { name, slug, description, image, visibility } = req.body;
     const category = await prisma.category.create({
       data: {
         name,
         slug: slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
         description,
         image,
+        visibility: visibility || 'BOTH',
         status: 'ACTIVE',
       },
     });
@@ -41,7 +48,7 @@ export const createCategory = async (req, res) => {
 export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, slug, description, image, status } = req.body;
+    const { name, slug, description, image, visibility, status } = req.body;
 
     const data = {};
     if (name) {
@@ -50,6 +57,7 @@ export const updateCategory = async (req, res) => {
     }
     if (description !== undefined) data.description = description;
     if (image !== undefined) data.image = image;
+    if (visibility) data.visibility = visibility;
     if (status) data.status = status;
 
     const category = await prisma.category.update({

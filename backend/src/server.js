@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 import apiRouter from './routes/api.router.js';
 
+import { globalApiLimiter } from './middlewares/rateLimit.middleware.js';
+import { handleServerError } from './utils/errorHandler.js';
+import { initBackupScheduler } from './services/backupScheduler.js';
+
 dotenv.config();
 
 const app = express();
@@ -21,17 +25,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Piercing E-commerce Platform API is running' });
 });
 
-// API Routes
-app.use('/api', apiRouter);
+// API Routes with Global Baseline Rate Limiter
+app.use('/api', globalApiLimiter, apiRouter);
 
-// Global Error Handler
+// Global Error Handler (Hides stack traces, SQL, file paths, and env vars from response)
 app.use((err, req, res, next) => {
-  console.error('API Error Stack:', err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
-    error: err.message,
-  });
+  return handleServerError(res, err, 'An unexpected internal server error occurred');
 });
 
 app.listen(PORT, () => {
@@ -40,4 +39,7 @@ app.listen(PORT, () => {
   console.log(` Health Check: http://localhost:${PORT}/health`);
   console.log(` API Base: http://localhost:${PORT}/api`);
   console.log(`=============================================================\n`);
+
+  // Initialize automated database backup scheduler
+  initBackupScheduler();
 });

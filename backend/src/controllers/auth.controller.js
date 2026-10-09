@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
 import { JWT_SECRET } from '../config/jwt.js';
+import { handleServerError } from '../utils/errorHandler.js';
 
 export const registerRetail = async (req, res) => {
   try {
@@ -45,7 +46,7 @@ export const registerRetail = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Registration failed', error: error.message });
+    return handleServerError(res, error, 'Registration failed');
   }
 };
 
@@ -132,7 +133,7 @@ export const registerB2B = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'B2B registration failed', error: error.message });
+    return handleServerError(res, error, 'B2B registration failed');
   }
 };
 
@@ -174,7 +175,7 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Login failed', error: error.message });
+    return handleServerError(res, error, 'Login failed');
   }
 };
 
@@ -200,7 +201,7 @@ export const getProfile = async (req, res) => {
 
     return res.json({ success: true, user });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error fetching profile', error: error.message });
+    return handleServerError(res, error, 'Error fetching profile');
   }
 };
 
@@ -213,7 +214,7 @@ export const getAddresses = async (req, res) => {
 
     return res.json({ success: true, addresses });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error fetching addresses', error: error.message });
+    return handleServerError(res, error, 'Error fetching addresses');
   }
 };
 
@@ -247,7 +248,7 @@ export const addAddress = async (req, res) => {
 
     return res.status(201).json({ success: true, message: 'Address saved successfully', address });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error saving address', error: error.message });
+    return handleServerError(res, error, 'Error saving address');
   }
 };
 
@@ -259,6 +260,6 @@ export const deleteAddress = async (req, res) => {
     });
     return res.json({ success: true, message: 'Address deleted' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error deleting address', error: error.message });
+    return handleServerError(res, error, 'Error deleting address');
   }
 };

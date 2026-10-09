@@ -9,7 +9,7 @@ import { Building2, User, LogOut, ShoppingBag } from 'lucide-react';
 import { B2BCatalog } from '../../pages/b2b/B2BCatalog';
 import { B2BRegister } from '../../pages/b2b/B2BRegister';
 import { B2BPendingApproval } from '../../pages/b2b/B2BPendingApproval';
-import { Login } from '../../pages/auth/Login';
+import { B2BLogin } from '../../pages/b2b/B2BLogin';
 import { CartPage } from '../../pages/retail/CartPage';
 import { CheckoutPage } from '../../pages/retail/CheckoutPage';
 
@@ -90,7 +90,8 @@ export default function AppB2B() {
                   <Route path="/register" element={<B2BRegister />} />
                   <Route path="/register-b2b" element={<Navigate to="/register" replace />} />
                   <Route path="/pending" element={<B2BPendingApproval />} />
-                  <Route path="/login" element={<Login />} />
+                  <Route path="/login" element={<B2BLogin />} />
+                  <Route path="/partner-login" element={<B2BLogin />} />
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />

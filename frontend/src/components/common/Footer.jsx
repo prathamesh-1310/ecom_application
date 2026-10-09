@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Truck, Headphones, Lock, AlertOctagon } from 'lucide-react';
+import { ShieldCheck, Truck, Headphones, Lock } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -28,25 +28,6 @@ export const Footer = () => {
             <h4 className="font-semibold text-white uppercase tracking-wider">Dedicated Support</h4>
             <p className="text-[11px] text-gray-400 mt-1">Exceptional case review within 48h</p>
           </div>
-        </div>
-
-        {/* Strict No Return Policy Highlight Box */}
-        <div className="my-8 p-5 bg-onyx-900 border border-gold-500/30 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <AlertOctagon className="w-6 h-6 text-gold-500 shrink-0" />
-            <div>
-              <h5 className="font-serif font-semibold text-gold-500 text-sm">NO RETURN AND NO REFUND POLICY</h5>
-              <p className="text-gray-300 text-xs mt-0.5">
-                All purchases are final. Products cannot be returned, exchanged, or refunded after order placement due to hygiene and health standards.
-              </p>
-            </div>
-          </div>
-          <Link
-            to="/policy"
-            className="shrink-0 bg-gold-500 text-onyx-950 font-semibold px-4 py-2 rounded hover:bg-gold-400 transition-colors"
-          >
-            Read Policy Terms
-          </Link>
         </div>
 
         {/* Footer Navigation Grid */}
@@ -91,7 +72,6 @@ export const Footer = () => {
 
         <div className="pt-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between text-gray-500 text-[11px]">
           <p>&copy; {new Date().getFullYear()} AURELIA Piercing Jewelry. All Rights Reserved.</p>
-          <p className="mt-2 sm:mt-0">Strict No Return Policy Active • All Sales Final</p>
         </div>
       </div>
     </footer>

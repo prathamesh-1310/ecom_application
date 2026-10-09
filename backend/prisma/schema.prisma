@@ -56,6 +56,7 @@ model Category {
   slug        String        @unique
   description String?
   image       String?
+  visibility  String        @default("BOTH") // RETAIL, B2B, BOTH
   status      String        @default("ACTIVE")
   createdAt   DateTime      @default(now())
 
@@ -334,11 +335,12 @@ model PolicyAcceptance {
 
 model Banner {
   id           String    @id @default(uuid())
-  platform     String    @default("RETAIL") // RETAIL, B2B
   title        String
   subtitle     String?
   image        String
   link         String?
+  visibility   String    @default("BOTH") // RETAIL, B2B, BOTH
+  platform     String    @default("RETAIL") // RETAIL, B2B, BOTH
   displayOrder Int       @default(0)
   startDate    DateTime?
   endDate      DateTime?

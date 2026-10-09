@@ -31,11 +31,13 @@ export const getProducts = async (req, res) => {
       ];
     }
 
-    let orderBy = { createdAt: 'desc' };
-    if (sort === 'price_low_high') {
-      orderBy = { retailPrice: 'asc' };
-    } else if (sort === 'price_high_low') {
+    let orderBy = { retailPrice: 'asc' };
+    if (sort === 'price_high_low') {
       orderBy = { retailPrice: 'desc' };
+    } else if (sort === 'recommended') {
+      orderBy = { stock: 'desc' };
+    } else if (sort === 'newest') {
+      orderBy = { createdAt: 'desc' };
     } else if (sort === 'name') {
       orderBy = { name: 'asc' };
     }
@@ -185,6 +187,7 @@ export const updateProduct = async (req, res) => {
       careInstructions,
       hygieneNotice,
       imageUrl,
+      images,
     } = req.body;
 
     const data = {};
@@ -204,7 +207,18 @@ export const updateProduct = async (req, res) => {
     if (careInstructions !== undefined) data.careInstructions = careInstructions;
     if (hygieneNotice !== undefined) data.hygieneNotice = hygieneNotice;
 
-    if (imageUrl) {
+    if (images && Array.isArray(images)) {
+      await prisma.productImage.deleteMany({ where: { productId: id } });
+      if (images.length > 0) {
+        await prisma.productImage.createMany({
+          data: images.map((img, idx) => ({
+            productId: id,
+            imageUrl: typeof img === 'string' ? img : img.imageUrl,
+            displayOrder: idx,
+          })),
+        });
+      }
+    } else if (imageUrl) {
       const existingImg = await prisma.productImage.findFirst({ where: { productId: id } });
       if (existingImg) {
         await prisma.productImage.update({

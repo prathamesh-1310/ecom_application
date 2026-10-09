@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Building2, Package, Tag, AlertCircle } from 'lucide-react';
-import { PolicyBadge } from '../../components/common/PolicyBadge';
+import { HeroBanner } from '../../components/common/HeroBanner';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -52,31 +52,17 @@ export const B2BCatalog = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {/* B2B Header */}
-      <div className="bg-onyx-900 text-beige-50 p-8 rounded-lg border border-gold-500/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 bg-gold-500/10 text-gold-500 border border-gold-500/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-widest">
-            <Building2 className="w-4 h-4" />
-            <span>B2B Wholesale Portal</span>
-          </div>
-          <h1 className="text-3xl font-serif font-bold text-white">Wholesale Catalog & Studio Supplies</h1>
-          <p className="text-xs text-gray-300">
-            Exclusive pricing, minimum order quantity rules (MOQ), and volume tier pricing for verified piercing studios.
-          </p>
-        </div>
+    <div className="space-y-8 pb-12">
+      {/* B2B Dynamic Hero Banner Section */}
+      <HeroBanner
+        platform="B2B"
+        defaultTitle="Wholesale Catalog & Studio Supplies"
+        defaultSubtitle="Exclusive wholesale pricing and studio supplies for verified piercing studios."
+        defaultCtaText="Browse Wholesale Catalog"
+        defaultCtaLink="/b2b/catalog"
+      />
 
-        {!user && (
-          <Link
-            to="/register-b2b"
-            className="shrink-0 bg-gold-500 text-onyx-950 font-semibold px-6 py-3 rounded text-xs uppercase tracking-wider hover:bg-gold-400 transition-colors shadow"
-          >
-            Apply for Wholesale Account
-          </Link>
-        )}
-      </div>
-
-      <PolicyBadge variant="compact" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
       {/* Products Grid */}
       {loading ? (
@@ -94,9 +80,6 @@ export const B2BCatalog = () => {
                   alt={prod.name}
                   className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <span className="absolute top-3 left-3 bg-gold-500 text-onyx-950 text-[10px] font-bold px-2.5 py-1 rounded">
-                  MOQ: {prod.moq} Units
-                </span>
               </div>
 
               <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
@@ -146,6 +129,7 @@ export const B2BCatalog = () => {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 };

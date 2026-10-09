@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { ShieldCheck, Info, ShoppingBag } from 'lucide-react';
-import { PolicyBadge } from '../../components/common/PolicyBadge';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -130,11 +129,6 @@ export const ProductDetail = () => {
             {product.salePrice && !isB2B && (
               <span className="text-sm text-gray-400 line-through">₹{product.retailPrice.toFixed(2)}</span>
             )}
-            {isB2B && product.moq > 1 && (
-              <span className="ml-auto text-xs bg-gold-500/20 text-gold-600 font-semibold px-2.5 py-1 rounded">
-                Wholesale MOQ: {product.moq} units
-              </span>
-            )}
           </div>
 
           {/* B2B Pricing Tier Table if applicable */}
@@ -205,9 +199,6 @@ export const ProductDetail = () => {
             <ShoppingBag className="w-4 h-4" />
             <span>Add to Shopping Cart</span>
           </button>
-
-          {/* Mandatory Strict Policy Warning Box */}
-          <PolicyBadge />
 
           {/* Product Hygiene & Care */}
           <div className="border-t border-gray-200 pt-4 space-y-3 text-xs text-gray-600">
